@@ -24,7 +24,7 @@ $ ghci Main.hs
 ```
 
 ## Imagens Geradas:
-Algumas imagens geradas pelo programa estão disponíveis na pasta "Imagens" do repositório.
+Algumas imagens geradas pelo programa estão disponíveis na pasta ["Imagens"](https://github.com/elc117/2021haskellt1-iuribpmoro/tree/master/Imagens) do repositório.
 
 
 ## Autor
