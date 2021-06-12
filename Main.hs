@@ -11,23 +11,21 @@ defaultPalette n = take n $ cycle [(7, 59, 58),(11, 110, 79),(8, 160, 69),(107, 
 -- Geração de retângulos em suas posições
 -------------------------------------------------------------------------------
 
-genRectsInLine :: Int -> [Rect]
-genRectsInLine n  = [((m*(w+gap), 0.0), w, h) | m <- [0..fromIntegral (n-1)]]
-  where (w,h) = (50,50)
-        gap = 10
+-- Gera lista de retangulos concentricos
+genRectsInLoop :: Int -> Float -> Float -> [Rect]
+genRectsInLoop n w h  = [((250, 250), (w-(gap*m)*w), (h-(gap*m)*h)) | m <- [0..fromIntegral (n)]]
+  where gap = 0.01
 
-genRectsInLoop :: Int -> [Rect]
-genRectsInLoop n  = [((m*(w+gap), 0.0), w, h) | m <- [0..fromIntegral (n-1)]]
-  where (w,h) = (50,50)
-        gap = 10
-
+-- Gera lista de círculos concentricos
+genCirclesInLoop :: Int -> Float -> [Circle]
+genCirclesInLoop n r  = [((750, 750), (r-(gap*m)*r)) | m <- [0..fromIntegral (n)]]
+  where gap = 0.01
 
 -------------------------------------------------------------------------------
 -- Strings SVG
 -------------------------------------------------------------------------------
 
 -- Gera string representando retângulo SVG 
--- dadas coordenadas e dimensões do retângulo e uma string com atributos de estilo
 svgRect :: Rect -> String -> String 
 svgRect ((x,y),w,h) style = 
   printf "<rect x='%.3f' y='%.3f' width='%.2f' height='%.2f' style='%s' />\n" x y w h style
@@ -35,7 +33,6 @@ svgRect ((x,y),w,h) style =
 svgCircle :: Circle -> String -> String 
 svgCircle ((x,y),r) style = 
   printf "<circle cx='%.3f' cy='%.3f' r='%.2f' style='%s' />\n" x y r style
-
 
 -- String inicial do SVG
 svgBegin :: Float -> Float -> String
@@ -46,25 +43,38 @@ svgEnd :: String
 svgEnd = "</svg>"
 
 -- Gera string com atributos de estilo para uma dada cor
--- Atributo mix-blend-mode permite misturar cores
 svgStyle :: (Int,Int,Int) -> String
-svgStyle (r,g,b) = printf "fill:rgb(%d,%d,%d); mix-blend-mode: screen;" r g b
+svgStyle (r,g,b) = printf "fill:rgb(%d,%d,%d);" r g b
 
 -- Gera strings SVG para uma dada lista de figuras e seus atributos de estilo
--- Recebe uma função geradora de strings SVG, uma lista de círculos/retângulos e strings de estilo
 svgElements :: (a -> String -> String) -> [a] -> [String] -> String
 svgElements func elements styles = concat $ zipWith func elements styles
 
 -------------------------------------------------------------------------------
--- Função principal que gera arquivo com imagem SVG
+-- Funções principais
 -------------------------------------------------------------------------------
 
-main :: IO ()
-main = do
+-- Gera a imagem de círculos concentricos
+concentricCircles :: Int -> Float -> IO ()
+concentricCircles ncircles width = do
+  writeFile "image.svg" $ svgstrs
+  where svgstrs = svgBegin w h ++ svgfigs ++ svgEnd
+        svgfigs = svgElements svgCircle circles (map svgStyle palette)
+        circles = genCirclesInLoop ncircles width
+        palette = defaultPalette ncircles
+        (w,h) = (1500,1500) -- width,height da imagem SVG
+
+-- Gera a imagem de retangulos concentricos
+concentricRectangles :: Int -> Float -> Float -> IO ()
+concentricRectangles nrects width height = do
   writeFile "image.svg" $ svgstrs
   where svgstrs = svgBegin w h ++ svgfigs ++ svgEnd
         svgfigs = svgElements svgRect rects (map svgStyle palette)
-        rects = genRectsInLoop nrects
+        rects = genRectsInLoop nrects width height
         palette = defaultPalette nrects
-        nrects = 10
-        (w,h) = (1500,500) -- width,height da imagem SVG
+        (w,h) = (1500,1500) -- width,height da imagem SVG
+
+
+-- Função Principal: Pega a opção passada e gera a imagem correspondente
+generate :: Int -> Int -> Float -> Float -> IO()
+generate option numElements width height = if option == 1 then concentricCircles numElements width else concentricRectangles numElements width height
